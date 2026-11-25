@@ -4,13 +4,39 @@ import type { SigningContext } from '@/features/pki/certificate'
 export type DocumentType = 'GENERAL' | 'EXPENSE' | 'LEAVE'
 export type DocumentStatus = 'DRAFT' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED'
 export type LineStatus = 'WAITING' | 'CURRENT' | 'APPROVED' | 'REJECTED'
-export type ExpenseCategory = 'MEAL' | 'TRANSPORT' | 'SUPPLIES' | 'EDUCATION' | 'ENTERTAINMENT' | 'OTHER'
+export type ExpenseCategory =
+  | 'MEAL'
+  | 'TRANSPORT'
+  | 'SUPPLIES'
+  | 'EDUCATION'
+  | 'ENTERTAINMENT'
+  | 'OTHER'
 export type LeaveType = 'ANNUAL' | 'HALF_AM' | 'HALF_PM' | 'SICK' | 'OTHER'
 
-export const DOCUMENT_TYPES: { value: DocumentType; label: string; icon: string; description: string }[] = [
-  { value: 'GENERAL', label: '기안서', icon: '📝', description: '업무 진행, 구매 요청 등 일반 결재' },
-  { value: 'EXPENSE', label: '지출결의서', icon: '💳', description: '비용 사용 내역 승인 요청' },
-  { value: 'LEAVE', label: '휴가신청서', icon: '🌴', description: '연차·반차·병가 신청' },
+export const DOCUMENT_TYPES: {
+  value: DocumentType
+  label: string
+  icon: string
+  description: string
+}[] = [
+  {
+    value: 'GENERAL',
+    label: '기안서',
+    icon: '📝',
+    description: '업무 진행, 구매 요청 등 일반 결재',
+  },
+  {
+    value: 'EXPENSE',
+    label: '지출결의서',
+    icon: '💳',
+    description: '비용 사용 내역 승인 요청',
+  },
+  {
+    value: 'LEAVE',
+    label: '휴가신청서',
+    icon: '🌴',
+    description: '연차·반차·병가 신청',
+  },
 ]
 
 export const STATUS_TABS: { value: DocumentStatus | 'ALL'; label: string }[] = [
@@ -30,7 +56,11 @@ export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'OTHER', label: '기타' },
 ]
 
-export const LEAVE_TYPES: { value: LeaveType; label: string; halfDay: boolean }[] = [
+export const LEAVE_TYPES: {
+  value: LeaveType
+  label: string
+  halfDay: boolean
+}[] = [
   { value: 'ANNUAL', label: '연차', halfDay: false },
   { value: 'HALF_AM', label: '오전반차', halfDay: true },
   { value: 'HALF_PM', label: '오후반차', halfDay: true },
@@ -40,8 +70,22 @@ export const LEAVE_TYPES: { value: LeaveType; label: string; halfDay: boolean }[
 
 // 백엔드 FileStorageService / DocumentUploadConfig 와 같은 값
 export const ALLOWED_EXTENSIONS = [
-  'pdf', 'hwp', 'hwpx', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
-  'txt', 'csv', 'jpg', 'jpeg', 'png', 'gif', 'zip',
+  'pdf',
+  'hwp',
+  'hwpx',
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  'txt',
+  'csv',
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'zip',
 ]
 export const MAX_FILE_SIZE_MB = 10
 export const MAX_FILE_COUNT = 5
@@ -220,4 +264,18 @@ export interface DocumentPayload {
   removedAttachmentIds: number[]
   /** 항상 false. 상신은 저장 후 documentApi.submit(전자서명) 으로 따로 한다 */
   submit: false
+}
+
+/** 저장된 개인 결재선 */
+export interface ApprovalPreset {
+  id: number
+  name: string
+  approverIds: number[]
+  approvers: Approver[]
+}
+
+/** 결재선 저장 및 수정 요청 */
+export interface ApprovalPresetPayload {
+  name: string
+  approverIds: number[]
 }

@@ -1,6 +1,8 @@
 import { api, ApiError, readErrorMessage } from '@/lib/api-client'
 import type {
   Approver,
+  ApprovalPreset,
+  ApprovalPresetPayload,
   DecisionPayload,
   DocumentDetail,
   DocumentPayload,
@@ -11,26 +13,42 @@ import type {
 } from './types'
 
 /** 파일 업로드용 요청 (Content-Type 은 브라우저가 boundary 와 함께 자동 설정) */
-async function sendMultipart<T>(url: string, payload: DocumentPayload, files: File[]): Promise<T> {
+async function sendMultipart<T>(
+  url: string,
+  payload: DocumentPayload,
+  files: File[],
+): Promise<T> {
   const form = new FormData()
-  form.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }))
+  form.append(
+    'data',
+    new Blob([JSON.stringify(payload)], { type: 'application/json' }),
+  )
   files.forEach((f) => form.append('files', f))
 
   let res: Response
   try {
-    res = await fetch(url, { method: 'POST', body: form, credentials: 'include' })
+    res = await fetch(url, {
+      method: 'POST',
+      body: form,
+      credentials: 'include',
+    })
   } catch {
     throw new ApiError(0, '서버에 연결할 수 없습니다.')
   }
   if (!res.ok) {
-    throw new ApiError(res.status, await readErrorMessage(res, '저장에 실패했습니다.'))
+    throw new ApiError(
+      res.status,
+      await readErrorMessage(res, '저장에 실패했습니다.'),
+    )
   }
   return (await res.json()) as T
 }
 
 export const documentApi = {
   myDocuments: (status?: DocumentStatus) =>
-    api<DocumentSummary[]>(`/api/documents${status ? `?status=${status}` : ''}`),
+    api<DocumentSummary[]>(
+      `/api/documents${status ? `?status=${status}` : ''}`,
+    ),
 
   inbox: () => api<DocumentSummary[]>('/api/documents/inbox'),
 
@@ -42,7 +60,8 @@ export const documentApi = {
   update: (id: number, payload: DocumentPayload, files: File[]) =>
     sendMultipart<DocumentDetail>(`/api/documents/${id}`, payload, files),
 
-  withdraw: (id: number) => api<DocumentDetail>(`/api/documents/${id}/withdraw`, { method: 'POST' }),
+  withdraw: (id: number) =>
+    api<DocumentDetail>(`/api/documents/${id}/withdraw`, { method: 'POST' }),
 
   /** 상신 — 임시저장 문서 + 기안자 전자서명 (서명 사슬의 첫 고리) */
   submit: (id: number, payload: SubmitPayload) =>
@@ -66,15 +85,18 @@ export const documentApi = {
     }),
 
   /** 결재 전자서명 검증 결과 */
-  signatures: (id: number) => api<SignatureVerification>(`/api/documents/${id}/signatures`),
+  signatures: (id: number) =>
+    api<SignatureVerification>(`/api/documents/${id}/signatures`),
 
   /** 반려 문서를 새 임시저장 문서로 복사 */
-  copy: (id: number) => api<DocumentDetail>(`/api/documents/${id}/copy`, { method: 'POST' }),
+  copy: (id: number) =>
+    api<DocumentDetail>(`/api/documents/${id}/copy`, { method: 'POST' }),
 
   /** 내가 승인/반려한 문서 */
   decided: () => api<DocumentSummary[]>('/api/documents/decided'),
 
-  remove: (id: number) => api<void>(`/api/documents/${id}`, { method: 'DELETE' }),
+  remove: (id: number) =>
+    api<void>(`/api/documents/${id}`, { method: 'DELETE' }),
 
   /** 전자서명 문서 원본(.json): 문서 + 서명 사슬 + 서명자 인증서 + 루트 CA. 시스템 밖에서도 재검증 가능 */
   exportUrl: (id: number) => `/api/documents/${id}/export`,
@@ -86,5 +108,33 @@ export const documentApi = {
 export const approvalLineApi = {
   defaultLine: () => api<Approver[]>('/api/approval-line/default'),
   search: (keyword: string) =>
-    api<Approver[]>(`/api/approval-line/approvers?keyword=${encodeURIComponent(keyword)}`),
+    api<Approver[]>(
+      `/api/approval-line/approvers?keyword=${encodeURIComponent(keyword)}`,
+    ),
+}
+
+/** 개인 결재선 저장 및 관리 API */
+export const approvalPresetApi = {
+  // 저장된 내 결재선 목록 조회
+  list: () => api<ApprovalPreset[]>('/api/approval-line/presets'),
+
+  // 새로운 결재선 저장
+  create: (payload: ApprovalPresetPayload) =>
+    api<ApprovalPreset>('/api/approval-line/presets', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  // 기존 결재선 수정
+  update: (id: number, payload: ApprovalPresetPayload) =>
+    api<ApprovalPreset>(`/api/approval-line/presets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  // 저장된 결재선 삭제
+  remove: (id: number) =>
+    api<void>(`/api/approval-line/presets/${id}`, {
+      method: 'DELETE',
+    }),
 }
